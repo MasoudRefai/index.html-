@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FMP Final Exams — Live Practice Simulator</title>
+<style>
+:root{
+  --bg:#0B1120; --panel:#121B30; --panel2:#182440; --line:#24304F;
+  --ink:#E7EDF8; --dim:#8FA0BF; --faint:#5B6B8C;
+  --fin:#E8B341; --om:#2DD4BF; --ls:#A78BFA; --pm:#38BDF8; --mock:#F472B6;
+  --ok:#34D399; --bad:#F87171; --warn:#FBBF24;
+  --mono:ui-monospace,'Cascadia Code','SF Mono',Consolas,monospace;
+  --sans:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh;
+  background-image:radial-gradient(1000px 500px at 80% -10%,rgba(56,189,248,.07),transparent),
+                   radial-gradient(800px 400px at 0% 100%,rgba(167,139,250,.06),transparent)}
+button{font-family:inherit;cursor:pointer;border:none}
+.wrap{max-width:1060px;margin:0 auto;padding:28px 20px 80px}
+/* ---------- header ---------- */
+.top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:26px}
+.brand{display:flex;align-items:center;gap:14px}
+.crest{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#1E3A8A,#0EA5E9);
+  display:grid;place-items:center;font-weight:800;font-size:15px;letter-spacing:1px;box-shadow:0 0 0 1px rgba(56,189,248,.35),0 8px 24px rgba(14,165,233,.25)}
+.brand h1{font-size:19px;letter-spacing:.4px}
+.brand small{display:block;color:var(--dim);font-size:12px;letter-spacing:2.5px;text-transform:uppercase;margin-top:2px}
+.sysline{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:1px;text-align:right}
+.sysline b{color:var(--ok)}
+/* ---------- dashboard ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;position:relative;overflow:hidden;
+  transition:transform .18s ease,border-color .18s ease}
+.card:hover{transform:translateY(-3px)}
+.card::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--c)}
+.card:hover{border-color:var(--c)}
+.tag{font-family:var(--mono);font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;color:var(--c);margin-bottom:8px}
+.card h2{font-size:17.5px;margin-bottom:6px}
+.card p{color:var(--dim);font-size:13.5px;line-height:1.55;margin-bottom:16px}
+.meta{display:flex;gap:14px;font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-bottom:16px}
+.meta span b{color:var(--ink);font-weight:600}
+.best{font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:14px}
+.best b{color:var(--ok)}
+.launch{width:100%;padding:11px;border-radius:10px;background:transparent;border:1px solid var(--c);color:var(--c);
+  font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;transition:.15s}
+.launch:hover{background:var(--c);color:#0B1120}
+.rules{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px 22px}
+.rules h3{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:10px;font-family:var(--mono)}
+.rules p{color:var(--dim);font-size:13.5px;line-height:1.7}
+/* ---------- exam ---------- */
+.exambar{position:sticky;top:0;z-index:10;background:rgba(11,17,32,.92);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);margin:-28px -20px 22px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.exambar .mod{font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--c)}
+.timer{font-family:var(--mono);font-size:20px;font-weight:600;letter-spacing:2px;padding:6px 14px;border-radius:8px;background:var(--panel2);border:1px solid var(--line)}
+.timer.low{color:var(--bad);border-color:var(--bad);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.55}}
+.qcount{font-family:var(--mono);font-size:12px;color:var(--dim)}
+.layout{display:grid;grid-template-columns:1fr 230px;gap:20px}
+@media(max-width:820px){.layout{grid-template-columns:1fr}}
+.qpanel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px}
+.qtopic{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--c);margin-bottom:10px}
+.qtext{font-size:16.5px;line-height:1.65;margin-bottom:20px}
+.opt{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;background:var(--panel2);
+  border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;color:var(--ink);font-size:14.5px;line-height:1.5;transition:.13s}
+.opt:hover{border-color:var(--c)}
+.opt .key{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--dim);border:1px solid var(--line);
+  border-radius:6px;min-width:24px;height:24px;display:grid;place-items:center;flex-shrink:0;margin-top:1px}
+.opt.sel{border-color:var(--c);background:color-mix(in srgb,var(--c) 12%,var(--panel2))}
+.opt.sel .key{background:var(--c);color:#0B1120;border-color:var(--c)}
+.navrow{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.btn{padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;letter-spacing:.5px;transition:.15s}
+.btn.ghost{background:var(--panel2);border:1px solid var(--line);color:var(--ink)}
+.btn.ghost:hover{border-color:var(--dim)}
+.btn.flagb{background:transparent;border:1px solid var(--warn);color:var(--warn)}
+.btn.flagb.on{background:var(--warn);color:#0B1120}
+.btn.submit{background:var(--ok);color:#04120C;margin-left:auto}
+.btn.submit:hover{filter:brightness(1.1)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+/* navigator */
+.navbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;height:fit-content;position:sticky;top:76px}
+.navbox h4{font-family:var(--mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:12px}
+.navgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.cell{aspect-ratio:1;border-radius:8px;background:var(--panel2);border:1px solid var(--line);color:var(--dim);
+  font-family:var(--mono);font-size:11.5px;display:grid;place-items:center;transition:.12s}
+.cell.done{background:color-mix(in srgb,var(--c) 22%,var(--panel2));color:var(--ink);border-color:var(--c)}
+.cell.flag{border-color:var(--warn);color:var(--warn)}
+.cell.cur{outline:2px solid var(--ink);outline-offset:1px}
+.legend{margin-top:14px;font-family:var(--mono);font-size:10.5px;color:var(--faint);line-height:1.9}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}
+/* ---------- results ---------- */
+.scorehero{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:34px;text-align:center;margin-bottom:18px;position:relative;overflow:hidden}
+.scorehero::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--c)}
+.verdict{font-family:var(--mono);font-size:12px;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px}
+.verdict.pass{color:var(--ok)}.verdict.fail{color:var(--bad)}
+.bignum{font-family:var(--mono);font-size:58px;font-weight:700;line-height:1}
+.subnum{color:var(--dim);font-size:13.5px;margin-top:10px;font-family:var(--mono)}
+.topicgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-bottom:20px}
+.tp{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.tp .tn{font-size:12.5px;color:var(--dim);margin-bottom:8px}
+.bar{height:6px;border-radius:3px;background:var(--panel2);overflow:hidden;margin-bottom:6px}
+.bar i{display:block;height:100%;background:var(--c)}
+.tp .ts{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+/* review */
+.rv{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:14px}
+.rv.wrong{border-left:4px solid var(--bad)}
+.rv.right{border-left:4px solid var(--ok)}
+.rv .qt{font-size:14.5px;line-height:1.6;margin:6px 0 12px;font-weight:600}
+.rv .ans{font-size:13.5px;line-height:1.6;margin-bottom:4px}
+.rv .ans b{font-family:var(--mono);font-size:12px}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.expl{margin-top:10px;padding:12px 14px;border-radius:10px;background:var(--panel2);color:var(--dim);font-size:13px;line-height:1.65}
+.filterrow{display:flex;gap:10px;margin:20px 0 16px;flex-wrap:wrap}
+.chip{padding:8px 16px;border-radius:999px;font-size:12.5px;background:var(--panel2);border:1px solid var(--line);color:var(--dim)}
+.chip.on{border-color:var(--c);color:var(--c)}
+.hidden{display:none}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script id="data">
+const BANK = {
+fin: {name:"Finance & Business", color:"var(--fin)", cvar:"--fin", mins:60, q:[
+{t:"Financial Terminology",q:"An FM department that must recover all of its costs by charging business units for services provided is operating as a:",o:["Profit center","Cost center with chargebacks","Investment center","Revenue-neutral trust"],a:1,e:"A chargeback model allocates FM costs back to the business units that consume the services; the FM unit remains a cost center, not a profit generator."},
+{t:"Financial Terminology",q:"Which of the following is a capital expenditure (CapEx) rather than an operating expense (OpEx)?",o:["Monthly janitorial contract fees","Replacing a chiller with a new unit expected to last 20 years","Utility bills for the data center","Lamp replacement supplies"],a:1,e:"CapEx buys or extends the life of long-term assets. A new chiller is capitalized and depreciated; the other items are consumed within the operating period."},
+{t:"Financial Terminology",q:"Depreciation is best described as:",o:["The cash set aside each year to buy new assets","The systematic allocation of an asset's cost over its useful life","The market value decline of a building","A tax paid on owned equipment"],a:1,e:"Depreciation is an accounting allocation of historical cost over useful life — it is a non-cash expense and does not necessarily track market value."},
+{t:"Budgeting",q:"A facility manager building next year's budget starts from zero and must justify every line item, rather than adjusting last year's figures. This approach is called:",o:["Incremental budgeting","Zero-based budgeting","Activity-based budgeting","Rolling forecast"],a:1,e:"Zero-based budgeting requires each expense to be justified from a zero baseline each cycle, unlike incremental budgeting which adjusts prior-year amounts."},
+{t:"Budgeting",q:"Halfway through the fiscal year, actual maintenance spend is 12% above budget. The FIRST step the FM should take is:",o:["Request an immediate budget increase","Freeze all maintenance work orders","Analyze the variance to identify root causes","Reallocate funds from the capital budget"],a:2,e:"Variance analysis comes first — understand whether the overrun is timing, volume, price, or scope driven before taking corrective or funding action."},
+{t:"Budgeting",q:"Which item belongs in the capital budget rather than the operating budget?",o:["Preventive maintenance labor","Roof replacement program","Snow removal contract","Water and sewer charges"],a:1,e:"A roof replacement is a major, infrequent expenditure that extends asset life — a classic capital project. The others are recurring operating costs."},
+{t:"Cost Analysis",q:"Life-cycle costing (LCC) is most useful when:",o:["Comparing bids with identical scope and duration","Choosing between alternatives with different purchase prices and different operating/maintenance costs","Calculating monthly utility accruals","Setting janitorial staffing levels"],a:1,e:"LCC totals acquisition, operating, maintenance, and disposal costs over the asset's life, so it is designed for comparing alternatives whose costs fall in different periods."},
+{t:"Cost Analysis",q:"A lighting retrofit costs $90,000 and saves $30,000 per year in energy. Its simple payback period is:",o:["2 years","3 years","4.5 years","9 years"],a:1,e:"Simple payback = investment ÷ annual savings = 90,000 ÷ 30,000 = 3 years."},
+{t:"Cost Analysis",q:"When evaluating a project using Net Present Value (NPV), the project should generally be accepted when:",o:["NPV is negative","NPV equals the discount rate","NPV is greater than zero","Payback exceeds asset life"],a:2,e:"A positive NPV means discounted future benefits exceed costs, so the project adds value at the chosen discount rate."},
+{t:"Cost Analysis",q:"Total Cost of Ownership (TCO) for a piece of FM equipment includes all of the following EXCEPT:",o:["Purchase price and installation","Energy and consumables","Maintenance and repairs over its life","The owner's unrelated corporate marketing costs"],a:3,e:"TCO captures all costs attributable to acquiring, operating, maintaining, and disposing of the asset — not unrelated overhead like corporate marketing."},
+{t:"Financial Statements",q:"Which financial statement shows an organization's assets, liabilities, and equity at a single point in time?",o:["Income statement","Balance sheet","Cash flow statement","Budget variance report"],a:1,e:"The balance sheet is a snapshot at a date; the income statement and cash flow statement cover a period of time."},
+{t:"Financial Statements",q:"An FM leases a building under a long-term lease. Under modern accounting standards, this lease typically appears on the balance sheet as:",o:["Only a footnote disclosure","A right-of-use asset and a lease liability","Revenue","Owner's equity"],a:1,e:"Current lease accounting standards bring most long-term leases onto the balance sheet as a right-of-use asset with a matching lease liability."},
+{t:"Financial Statements",q:"The income statement primarily reports:",o:["Cash received and paid during the year","Revenues and expenses over a period","Asset book values","Capital project commitments"],a:1,e:"The income statement matches revenues against expenses for a period to show profit or loss; cash movements are the cash flow statement's job."},
+{t:"Financial Statements",q:"Accrual accounting differs from cash accounting because it:",o:["Records transactions only when cash changes hands","Recognizes revenue and expenses when earned or incurred","Ignores depreciation","Is used only by government entities"],a:1,e:"Accrual accounting recognizes economic events when they occur, matching expenses to the periods they benefit, regardless of cash timing."},
+{t:"Procurement & Contracts",q:"An RFP differs from an RFQ mainly because an RFP:",o:["Is used only for commodities","Invites solution proposals evaluated on multiple criteria, not just price","Guarantees award to the lowest bidder","Cannot include service levels"],a:1,e:"An RFP seeks proposed approaches and is evaluated on qualifications, methodology, and value; an RFQ requests pricing for a well-defined requirement."},
+{t:"Procurement & Contracts",q:"In a fixed-price (lump sum) service contract, the party carrying most of the cost-overrun risk is:",o:["The owner","The contractor","Both equally by law","The end users"],a:1,e:"With a fixed price, the contractor absorbs cost overruns; in cost-plus arrangements the owner carries more of that risk."},
+{t:"Procurement & Contracts",q:"A performance-based FM contract is best characterized by:",o:["Paying for labor hours consumed","Defining required outcomes and service levels rather than prescribing methods","Fixed monthly fees with no measurement","Owner-supplied step-by-step work instructions"],a:1,e:"Performance-based contracts specify measurable outcomes (SLAs/KPIs) and let the provider decide how to achieve them, with payment tied to results."},
+{t:"Procurement & Contracts",q:"Before signing a multi-year outsourcing agreement, the FM's due diligence should MOST importantly include:",o:["Checking only the lowest price","Verifying the vendor's financial stability, references, and capability","Confirming the vendor's logo quality","Requiring the vendor to relocate its head office"],a:1,e:"Multi-year dependence on a provider makes financial health, track record, and capacity the critical due-diligence checks — price alone is insufficient."},
+{t:"Business Cases",q:"The primary purpose of a business case for an FM initiative is to:",o:["Document completed work","Justify the investment by linking costs, benefits, and risks to organizational objectives","Replace the project schedule","Satisfy the maintenance backlog"],a:1,e:"A business case gives decision-makers the financial and strategic justification — costs, quantified benefits, risks, and alternatives — aligned to organizational goals."},
+{t:"Business Cases",q:"When presenting an FM proposal to the C-suite, benefits should be expressed primarily in terms of:",o:["Technical equipment specifications","Business impact — cost savings, risk reduction, productivity, and alignment with strategy","Number of work orders closed","The FM team's preferred brands"],a:1,e:"Executives decide on business outcomes; translating FM technical value into financial and strategic language is a core FMP competency."},
+{t:"Business Cases",q:"Return on Investment (ROI) is calculated as:",o:["Total cost ÷ total benefit","(Net benefit ÷ investment cost) × 100","Investment × discount rate","Annual savings − depreciation"],a:1,e:"ROI expresses net gain as a percentage of the amount invested: (benefits − costs) ÷ costs × 100."},
+{t:"Budgeting",q:"Accruing an expense at year-end for services received but not yet invoiced ensures:",o:["Cash balances increase","Expenses are matched to the period in which they were incurred","The budget automatically rolls over","Vendors are paid faster"],a:1,e:"Accruals apply the matching principle so the fiscal year reflects the true cost of services consumed, even if invoices arrive later."},
+{t:"Cost Analysis",q:"A benchmarking study shows your cost per square meter for cleaning is well above peer facilities. The most appropriate next step is to:",o:["Immediately cut the cleaning contract by the difference","Investigate scope, service levels, and building differences before acting","Ignore the study since every building is unique","Switch vendors without analysis"],a:1,e:"Benchmark gaps are signals, not verdicts — differences in scope, standards, density, and building type must be understood before corrective action."},
+{t:"Financial Terminology",q:"Fixed costs differ from variable costs in that fixed costs:",o:["Change directly with occupancy or output","Remain constant in total across normal activity levels","Are always avoidable","Apply only to leased buildings"],a:1,e:"Fixed costs (e.g., lease payments, permanent staff) do not vary with short-term activity; variable costs move with usage or occupancy."},
+{t:"Procurement & Contracts",q:"Retainage (retention) in a construction or fit-out contract is money that is:",o:["Paid up front as a mobilization advance","Withheld from progress payments until satisfactory completion","A penalty for early completion","Refunded to the contractor's bank"],a:1,e:"Retention is withheld from each progress payment as leverage for quality and completion, released after acceptance or the defects period."}
+]},
+om: {name:"Operations & Maintenance", color:"var(--om)", cvar:"--om", mins:60, q:[
+{t:"Maintenance Strategy",q:"Maintenance performed on a fixed time or usage interval, regardless of asset condition, is called:",o:["Corrective maintenance","Preventive maintenance","Predictive maintenance","Deferred maintenance"],a:1,e:"Preventive maintenance is scheduled by time or usage. Predictive maintenance instead uses condition data to decide when to intervene."},
+{t:"Maintenance Strategy",q:"Vibration analysis on pump bearings to detect deterioration before failure is an example of:",o:["Run-to-failure","Predictive (condition-based) maintenance","Reactive maintenance","Corrective maintenance"],a:1,e:"Predictive maintenance monitors actual asset condition (vibration, thermography, oil analysis) and triggers work only when data indicates degradation."},
+{t:"Maintenance Strategy",q:"A run-to-failure strategy is MOST appropriate for:",o:["The main electrical switchgear","Life-safety systems","Low-cost, non-critical, easily replaced assets such as small exhaust fans","The building's only chiller"],a:2,e:"Run-to-failure is acceptable only where failure consequences are minor and replacement is cheap and quick — never for critical or life-safety assets."},
+{t:"Maintenance Strategy",q:"Reliability-Centered Maintenance (RCM) determines the maintenance approach for each asset primarily based on:",o:["Manufacturer brochures alone","Failure modes, consequences, and criticality to operations","The age of the maintenance staff","Uniform intervals for all equipment"],a:1,e:"RCM analyzes how assets fail and what the consequences are, then assigns the most effective strategy (PM, PdM, redesign, or run-to-failure) per failure mode."},
+{t:"Asset Management",q:"An accurate asset inventory/register matters most because it:",o:["Is required to print equipment labels","Underpins maintenance planning, life-cycle budgeting, and risk decisions","Replaces the need for inspections","Increases the building's sale price directly"],a:1,e:"The asset register is the foundation of O&M — you cannot plan maintenance, forecast capital renewal, or assess risk for assets you have not identified."},
+{t:"Asset Management",q:"A Facility Condition Assessment (FCA) primarily produces:",o:["A janitorial schedule","Documented condition, deficiencies, and renewal cost forecasts for buildings and systems","Employee satisfaction scores","A security patrol route"],a:1,e:"An FCA evaluates the physical condition of building systems and quantifies deficiencies and renewal needs, feeding the capital plan and the FCI."},
+{t:"Asset Management",q:"The Facility Condition Index (FCI) is calculated as:",o:["Deferred maintenance cost ÷ current replacement value","Replacement value ÷ annual budget","Work orders closed ÷ work orders opened","Occupied area ÷ total area"],a:0,e:"FCI = cost of deferred maintenance/deficiencies ÷ current replacement value. A higher FCI indicates worse condition."},
+{t:"Work Management",q:"In a CMMS, the correct general flow of a demand work order is:",o:["Close → assign → request","Request → approve/prioritize → plan/schedule → execute → close with data","Execute → budget → request","Plan → close → execute"],a:1,e:"Work flows from request through approval, prioritization, planning/scheduling, execution, and closure with labor, parts, and failure data captured."},
+{t:"Work Management",q:"A work order backlog that keeps growing month over month most directly indicates:",o:["Excellent preventive maintenance","Demand exceeding resource capacity or poor prioritization","Too many technicians","A healthy facility"],a:1,e:"A rising backlog signals a mismatch between incoming work and available capacity — requiring resource, priority, or scope decisions."},
+{t:"Work Management",q:"Which KPI best measures maintenance responsiveness to critical failures?",o:["Cost per square meter","Mean Time To Repair (MTTR)","Number of purchase orders","Energy use intensity"],a:1,e:"MTTR tracks how quickly failed assets are restored. MTBF measures reliability; cost and energy metrics measure other dimensions."},
+{t:"Building Systems",q:"The primary function of an Air Handling Unit (AHU) in an HVAC system is to:",o:["Generate chilled water","Condition and distribute air (filter, heat/cool, and move it) through the building","Provide standby power","Pressurize the fire sprinkler system"],a:1,e:"AHUs filter, heat or cool, and circulate air via ductwork; chilled water generation is the chiller's role."},
+{t:"Building Systems",q:"A Building Automation System (BAS) contributes to O&M primarily by:",o:["Eliminating all maintenance needs","Monitoring and controlling building systems, enabling alarms, trending, and optimization","Replacing the CMMS","Serving as the fire alarm panel only"],a:1,e:"The BAS provides centralized control, alarm notification, and performance trend data used for troubleshooting and energy optimization — it complements, not replaces, the CMMS."},
+{t:"Building Systems",q:"Emergency generators serving life-safety loads should be exercised:",o:["Only after a utility outage occurs","Regularly under load per code and manufacturer requirements","Once every five years","Never, to preserve engine life"],a:1,e:"Codes and manufacturers require routine tested operation under load to ensure generators will start and carry load during a real outage."},
+{t:"Occupant Services",q:"Service Level Agreements (SLAs) for FM services should be:",o:["Vague to allow flexibility","Specific, measurable, and agreed with the customer","Defined solely by the vendor","Changed weekly"],a:1,e:"Effective SLAs define measurable response and quality targets agreed between provider and customer, enabling objective performance management."},
+{t:"Occupant Services",q:"The most direct way to evaluate occupant satisfaction with FM services is:",o:["Reviewing utility bills","Structured occupant surveys plus service request feedback","Counting fire drills","Auditing the asset register"],a:1,e:"Occupant surveys and post-service feedback measure the customer experience directly; other data measures cost or compliance."},
+{t:"Contracted Services",q:"When O&M services are outsourced, the FM organization's essential retained role is:",o:["Performing all hands-on work anyway","Governance — defining requirements, monitoring performance, and managing the contract","Nothing; the vendor is fully independent","Handling only invoice payment"],a:1,e:"Outsourcing transfers execution, not accountability. The owner FM team must govern scope, standards, KPIs, and contract performance."},
+{t:"Contracted Services",q:"Key Performance Indicators in an FM contract are most effective when they are:",o:["Numerous and unweighted","Few, meaningful, measurable, and tied to consequences/incentives","Chosen after disputes arise","Based on anecdotes"],a:1,e:"A small set of measurable, outcome-linked KPIs with defined incentives or remedies drives vendor behavior far better than long unweighted lists."},
+{t:"Emergency Preparedness",q:"A business continuity plan (BCP) differs from an emergency response plan because the BCP focuses on:",o:["Immediate life safety during an incident","Maintaining or rapidly resuming critical business functions after disruption","Fire extinguisher locations","Daily work order flow"],a:1,e:"Emergency response protects people during the event; business continuity keeps critical operations running or restores them quickly afterward."},
+{t:"Emergency Preparedness",q:"After a major utility failure drill, the MOST valuable closing activity is:",o:["Filing the sign-in sheet","A structured after-action review capturing lessons learned and corrective actions","Rescheduling the next drill only","Disciplining slow responders"],a:1,e:"Drills exist to expose gaps; an after-action review converts observations into assigned corrective actions that improve real response."},
+{t:"Energy & Utilities",q:"Energy Use Intensity (EUI) normalizes building energy consumption by:",o:["Number of elevators","Floor area (energy per unit area per year)","Employee headcount only","Building height"],a:1,e:"EUI expresses annual energy use per unit of floor area, enabling comparison across buildings and against benchmarks."},
+{t:"Energy & Utilities",q:"The cheapest and usually first step in an energy management program is:",o:["Replacing all chillers","Low/no-cost operational measures — schedules, setpoints, and eliminating waste","Installing a solar farm","Rebuilding the facade"],a:1,e:"Optimizing schedules, setpoints, and controls typically yields immediate savings with little capital, before investing in retrofits."},
+{t:"Maintenance Strategy",q:"Deferred maintenance is best described as:",o:["Maintenance completed ahead of schedule","Required work postponed due to funding or resource constraints, accumulating as a liability","Optional cosmetic upgrades","Vendor warranty work"],a:1,e:"Deferred maintenance is necessary work that has been postponed; it accumulates risk and cost and is tracked via the FCA/FCI."},
+{t:"Work Management",q:"Planned/scheduled maintenance ratio (planned vs. reactive work) is tracked because a higher planned percentage generally indicates:",o:["Poor asset condition","More stable, efficient, lower-cost operations with fewer surprises","Excess staffing","Nothing useful"],a:1,e:"A high planned-work ratio reflects proactive control of asset care; heavily reactive operations cost more and disrupt occupants."},
+{t:"Building Systems",q:"Water treatment in cooling towers is critical primarily to control:",o:["Paint fading","Scale, corrosion, and biological risks such as Legionella","Elevator noise","Lighting levels"],a:1,e:"Cooling tower water treatment protects heat-transfer efficiency and equipment life and manages serious health risks like Legionella bacteria."},
+{t:"Occupant Services",q:"A well-run service desk (help desk) improves O&M primarily by:",o:["Hiding complaints from management","Providing a single point of contact, consistent triage, and data on demand patterns","Eliminating preventive maintenance","Replacing technician training"],a:1,e:"A single point of contact standardizes intake and prioritization and generates demand data that drives staffing and improvement decisions."}
+]},
+ls: {name:"Leadership & Strategy", color:"var(--ls)", cvar:"--ls", mins:60, q:[
+{t:"Strategic Alignment",q:"The FM strategic plan should be derived primarily from:",o:["The FM team's equipment wish list","The organization's mission, vision, and strategic objectives","Last year's work order counts","Vendor marketing materials"],a:1,e:"FM strategy exists to enable the core business; it must cascade from and demonstrably support organizational strategy."},
+{t:"Strategic Alignment",q:"A facility master plan primarily addresses:",o:["Tomorrow's work order schedule","Long-range space, asset, and infrastructure needs aligned with business direction","Daily janitorial routes","Individual employee objectives"],a:1,e:"The master plan translates business growth and change scenarios into long-range real estate, space, and infrastructure requirements."},
+{t:"Strategic Alignment",q:"When the core business announces a shift to hybrid work, the FM's strategic response should begin with:",o:["Immediately subleasing half the portfolio","Analyzing utilization data and business needs to model space and service scenarios","Cancelling all cleaning contracts","Waiting until leases expire"],a:1,e:"Strategic decisions require data — utilization, headcount plans, and workstyle needs — before committing to portfolio or service changes."},
+{t:"Leadership",q:"The key difference between leading and managing is that leadership focuses on:",o:["Schedules and budgets","Setting direction, aligning, and inspiring people toward a vision","Enforcing timesheets","Processing invoices"],a:1,e:"Management delivers order through planning and control; leadership creates direction, alignment, and motivation — FMs need both."},
+{t:"Leadership",q:"A facility manager who adapts their style — directing new hires closely while delegating to experienced staff — is practicing:",o:["Laissez-faire leadership","Situational leadership","Autocratic leadership","Transactional avoidance"],a:1,e:"Situational leadership matches the degree of direction and support to each person's competence and commitment for the task."},
+{t:"Leadership",q:"Delegation is most effective when the FM delegates:",o:["Only the tasks nobody wants","Authority and clear expected outcomes along with the responsibility","Responsibility but keeps all authority","Everything, including accountability"],a:1,e:"Effective delegation pairs responsibility with the authority and clarity needed to deliver; accountability ultimately stays with the leader."},
+{t:"Change Management",q:"In a workplace relocation project, the most common reason occupants resist change is:",o:["The new furniture color","Fear of the unknown and loss of control, worsened by poor communication","Excessive project funding","Too much advance notice"],a:1,e:"Resistance is usually emotional — uncertainty and perceived loss. Early, honest, two-way communication and involvement reduce it."},
+{t:"Change Management",q:"An effective sequence for leading organizational change is best reflected by:",o:["Announce → punish resisters → declare victory","Create urgency → build coalition → communicate vision → enable action → consolidate gains","Implement first, explain later","Outsource the change entirely"],a:1,e:"Structured change models (e.g., Kotter) emphasize urgency, coalition, vision, communication, empowerment, quick wins, and anchoring the change."},
+{t:"Communication",q:"When communicating a major utility shutdown to building occupants, the FM should:",o:["Send one technical memo the night before","Communicate early, in plain language, through multiple channels, stating impact and actions required","Inform only senior management","Rely on rumor to spread the word"],a:1,e:"Effective occupant communication is timely, audience-appropriate, multi-channel, and explicit about impact, timing, and what occupants must do."},
+{t:"Communication",q:"Active listening in stakeholder meetings means:",o:["Preparing your rebuttal while others speak","Concentrating, confirming understanding (paraphrasing), and responding to what was actually said","Nodding while checking email","Interrupting to save time"],a:1,e:"Active listening requires full attention and verification of understanding — it builds trust and surfaces real requirements."},
+{t:"Teams & HR",q:"When building a new FM team structure, roles and responsibilities are best clarified using:",o:["Verbal tradition","Documented position descriptions and a responsibility matrix (e.g., RACI)","Guesswork during emergencies","Seniority alone"],a:1,e:"Written role definitions and a RACI matrix prevent gaps and overlaps, especially across in-house and outsourced boundaries."},
+{t:"Teams & HR",q:"The primary purpose of performance appraisals for FM staff is to:",o:["Justify terminations","Align individual goals, give feedback, and support development","Fill an HR form annually","Rank staff for gossip"],a:1,e:"Appraisals connect individual performance to organizational goals and drive feedback, recognition, and development planning."},
+{t:"Teams & HR",q:"A high-performing cross-functional FM team is characterized MOST by:",o:["Identical technical backgrounds","Clear shared goals, defined roles, mutual trust, and open communication","Competition between members","Minimal interaction"],a:1,e:"Team effectiveness research consistently points to shared purpose, role clarity, psychological safety/trust, and communication."},
+{t:"Policies & Ethics",q:"FM policies differ from procedures in that policies:",o:["Give step-by-step task instructions","State the organization's intent and rules; procedures describe how to carry them out","Are optional suggestions","Apply only to contractors"],a:1,e:"Policies set the 'what and why' (rules and intent); procedures provide the 'how' (specific steps to comply)."},
+{t:"Policies & Ethics",q:"A vendor bidding on your FM contract offers the evaluation team expensive gifts. The appropriate action is to:",o:["Accept if the gifts are nice","Decline, disclose per the organization's ethics policy, and ensure a fair process","Accept but score them lower","Keep it confidential"],a:1,e:"Gifts during procurement create conflicts of interest; ethical practice requires declining, disclosing, and protecting process integrity."},
+{t:"Strategic Alignment",q:"A SWOT analysis performed for the FM organization examines:",o:["Only financial ratios","Internal strengths and weaknesses plus external opportunities and threats","Software licensing terms","Weather patterns only"],a:1,e:"SWOT structures strategic assessment into internal capabilities (S, W) and external environment factors (O, T)."},
+{t:"Communication",q:"When presenting FM performance to executives, the FM should lead with:",o:["Every work order detail","Key outcomes and business impact, supported by a few meaningful metrics","Technical jargon to impress","Complaints about budget"],a:1,e:"Executive communication is top-down: headline outcomes and business relevance first, with supporting detail available on request."},
+{t:"Advocacy & Influence",q:"To advocate effectively for FM within the organization, the FM should:",o:["Wait to be asked for input","Proactively demonstrate FM's contribution to cost, risk, productivity, and strategy with credible data","Rely solely on complaints to gain attention","Avoid contact with other departments"],a:1,e:"Influence is built by proactively linking FM performance to what the organization values, with evidence and consistent delivery."},
+{t:"Teams & HR",q:"Succession planning in an FM department ensures that:",o:["Everyone retires at once","Critical roles have identified, developed candidates to maintain continuity","Only external hires fill vacancies","Knowledge stays undocumented"],a:1,e:"Succession planning identifies critical positions and prepares internal talent, protecting operational continuity and institutional knowledge."},
+{t:"Change Management",q:"Quick wins early in a change initiative are valuable because they:",o:["Allow the team to stop communicating","Build credibility and momentum, reinforcing belief in the change","Eliminate the need for planning","Replace stakeholder engagement"],a:1,e:"Visible early results validate the effort, convert skeptics, and sustain the energy needed for longer-term change."},
+{t:"Leadership",q:"Emotional intelligence in FM leadership refers to:",o:["Suppressing all emotion at work","Recognizing and managing your own emotions and understanding others' to guide interactions","Reacting quickly under stress","Memorizing HR policies"],a:1,e:"EI — self-awareness, self-regulation, empathy, and social skill — underpins effective leadership, conflict handling, and service culture."},
+{t:"Policies & Ethics",q:"When an organizational policy conflicts with a local safety regulation, the FM must:",o:["Follow the policy; it is internal law","Comply with the legal/regulatory requirement and escalate to update the policy","Ignore both","Let contractors decide"],a:1,e:"Legal and regulatory requirements take precedence; the FM must comply and drive alignment of internal policy."},
+{t:"Strategic Alignment",q:"Balanced scorecards used in FM typically track performance across:",o:["Finance only","Financial, customer, internal process, and learning/growth perspectives","Marketing campaigns","Personal social media"],a:1,e:"The balanced scorecard broadens performance measurement beyond finance to customers, processes, and organizational capability."},
+{t:"Communication",q:"The FIRST step in developing a stakeholder communication plan is to:",o:["Choose fonts for the newsletter","Identify stakeholders and analyze their interests, influence, and information needs","Send a mass email","Book a large meeting room"],a:1,e:"Stakeholder identification and analysis drives everything else — what to communicate, to whom, how, and how often."},
+{t:"Advocacy & Influence",q:"Negotiating with an internal department over shared space, the best opening posture is to:",o:["Issue an ultimatum","Understand their interests and seek options for mutual gain before positioning","Concede everything to keep peace","Escalate immediately to the CEO"],a:1,e:"Interest-based negotiation uncovers underlying needs and expands options, producing durable agreements and preserved relationships."}
+]},
+pm: {name:"Project Management", color:"var(--pm)", cvar:"--pm", mins:60, q:[
+{t:"Project Fundamentals",q:"A project differs from routine operations because a project is:",o:["Permanent and repetitive","Temporary, with a defined start, end, and unique deliverable","Always over budget","Performed only by contractors"],a:1,e:"Projects are temporary endeavors producing a unique result; operations are ongoing and repetitive."},
+{t:"Project Fundamentals",q:"The classic triple constraint of project management balances:",o:["People, paper, and politics","Scope, time (schedule), and cost — with quality affected by all three","Risk, revenue, and rent","Design, decor, and desks"],a:1,e:"Changing any one of scope, schedule, or cost pressures the others; quality sits at the center of the trade-offs."},
+{t:"Initiation",q:"The document that formally authorizes a project and names the project manager is the:",o:["Punch list","Project charter","Change order","Invoice"],a:1,e:"The charter authorizes the project, states its purpose and high-level requirements, and grants the PM authority to apply resources."},
+{t:"Initiation",q:"During project initiation for an office fit-out, identifying stakeholders early matters because:",o:["It fills time before design","Their requirements, influence, and expectations shape scope and prevent late surprises","Stakeholders approve invoices","It is a purely ceremonial step"],a:1,e:"Late-discovered stakeholders cause rework and conflict; early identification lets requirements and expectations be managed from the start."},
+{t:"Scope",q:"A Work Breakdown Structure (WBS) is:",o:["A staff disciplinary chart","A hierarchical decomposition of the total project scope into manageable work packages","A financial statement","The list of excluded work only"],a:1,e:"The WBS breaks the deliverable-oriented scope into work packages that can be estimated, assigned, scheduled, and controlled."},
+{t:"Scope",q:"Scope creep is best prevented by:",o:["Refusing all stakeholder contact","A clear scope baseline plus a formal change control process","Padding the budget secretly","Skipping documentation"],a:1,e:"A defined, approved baseline and disciplined change control ensure additions are evaluated, priced, and authorized rather than absorbed silently."},
+{t:"Scheduling",q:"On a project network diagram, the critical path is:",o:["The most dangerous site route","The longest sequence of dependent activities, determining the shortest possible project duration","The cheapest activities","Any path with float"],a:1,e:"The critical path has zero float; any delay on it delays the project finish date."},
+{t:"Scheduling",q:"Float (slack) on an activity means:",o:["The activity is unnecessary","The activity can be delayed by that amount without delaying the project finish","The activity is over budget","The activity must start immediately"],a:1,e:"Total float is the delay an activity can absorb without moving the project end date; critical activities have zero float."},
+{t:"Scheduling",q:"Adding more resources to critical-path activities to shorten the schedule is called:",o:["Fast tracking","Crashing","Levelling","Padding"],a:1,e:"Crashing trades cost for time on critical activities; fast tracking overlaps sequential activities and trades risk for time."},
+{t:"Cost",q:"A rough order of magnitude (ROM) estimate is used:",o:["For final contractor payment","Early in the project when little detail exists, with a wide accuracy range","Only after closeout","To calculate exact taxes"],a:1,e:"ROM estimates support early screening decisions and carry wide ranges; accuracy improves as definition increases toward definitive estimates."},
+{t:"Cost",q:"Contingency reserve in a project budget covers:",o:["Executive bonuses","Identified risks and estimating uncertainty within the approved plan","Scope the sponsor rejected","Personal expenses"],a:1,e:"Contingency is planned money for known-unknowns; management reserve (held above the baseline) addresses unknown-unknowns."},
+{t:"Cost",q:"In earned value terms, a Cost Performance Index (CPI) of 0.85 means the project is:",o:["Under budget","Getting $0.85 of work for every $1.00 spent — over budget","Ahead of schedule","Complete"],a:1,e:"CPI = EV ÷ AC. Below 1.0 indicates cost overrun: less value earned than money spent."},
+{t:"Risk",q:"The correct order of the basic risk management process is:",o:["Respond → ignore → document","Identify → analyze (probability & impact) → plan responses → monitor","Insure → forget","Escalate everything immediately"],a:1,e:"Risks are first identified, then assessed for probability and impact, then given planned responses, and monitored throughout the project."},
+{t:"Risk",q:"Purchasing insurance for construction risk is an example of which risk response?",o:["Avoidance","Transfer","Acceptance","Exploitation"],a:1,e:"Insurance shifts the financial impact of the risk to a third party — the classic transfer response."},
+{t:"Risk",q:"A risk register should record, at minimum:",o:["Only the PM's worries","Each risk, its probability, impact, owner, and planned response","Staff birthdays","Completed milestones only"],a:1,e:"The register is the living log of identified risks with assessment, ownership, and response status."},
+{t:"Stakeholders & Communication",q:"During a lobby renovation, tenants complain about noise despite prior notices. The best PM response is to:",o:["Ignore them; notice was given","Re-engage: review the complaints, adjust noisy-work windows where feasible, and improve ongoing communication","Stop the project permanently","Remove tenants' badges"],a:1,e:"Stakeholder management is continuous — respond, adapt reasonably (e.g., schedule noisy work off-hours), and keep communication flowing."},
+{t:"Stakeholders & Communication",q:"A project status report to the sponsor should emphasize:",o:["Raw data dumps","Progress versus baseline (scope, schedule, cost), key risks/issues, and decisions needed","Only good news","The PM's daily diary"],a:1,e:"Sponsors need performance against the plan, top risks and issues, and clear asks — enabling timely decisions."},
+{t:"Execution & Control",q:"A formal change control process requires that proposed changes are:",o:["Implemented first, documented later","Evaluated for scope, schedule, cost, and risk impact, then approved or rejected by the proper authority","Approved verbally by anyone","Automatically accepted"],a:1,e:"Integrated change control assesses full impact and routes the change to the authorized approver before the baseline is modified."},
+{t:"Execution & Control",q:"During an FF&E installation, the vendor proposes substituting a discontinued chair model. The PM should FIRST:",o:["Accept to save time","Evaluate the substitution against specifications, cost, schedule, and get user/designer approval via change control","Cancel the whole contract","Order double quantity"],a:1,e:"Substitutions are changes — they must be checked against requirements and approved through the change process before acceptance."},
+{t:"Quality & Commissioning",q:"Commissioning (Cx) of building systems in a project ensures that:",o:["The building looks attractive","Installed systems are verified to perform according to the design intent and owner requirements","Contractors are paid early","Furniture is ergonomic"],a:1,e:"Commissioning is the quality process of verifying and documenting that systems perform per the owner's project requirements."},
+{t:"Closeout",q:"A punch list is:",o:["A staff attendance sheet","The list of incomplete or deficient items the contractor must correct before final acceptance","The project budget","A security log"],a:1,e:"Near substantial completion, the punch list documents defects and incomplete work to be resolved prior to final acceptance and payment release."},
+{t:"Closeout",q:"Which items must be secured at project closeout for smooth handover to O&M?",o:["Only the contractor's business card","As-builts, O&M manuals, warranties, training, and spare parts data","Marketing brochures","The designer's sketches only"],a:1,e:"O&M readiness depends on as-built drawings, manuals, warranty terms, staff training, and asset data being handed over and loaded into the CMMS."},
+{t:"Closeout",q:"Lessons-learned sessions are held to:",o:["Assign blame publicly","Capture what worked and what didn't so future projects improve","Extend the project artificially","Satisfy auditors only"],a:1,e:"Lessons learned institutionalize experience — feeding better estimates, risk lists, and practices into future projects."},
+{t:"Project Fundamentals",q:"In FM projects, the project manager's role during design reviews is to:",o:["Stay out of technical matters entirely","Ensure operability, maintainability, and owner requirements are reflected in the design","Approve aesthetics only","Negotiate staff salaries"],a:1,e:"FM-led reviews inject life-cycle thinking — access for maintenance, standardization, energy performance — before design is locked."},
+{t:"Scheduling",q:"A Gantt chart primarily communicates:",o:["Organizational hierarchy","Activities plotted against time, showing durations, sequence, and progress","Cash flow only","Risk probabilities"],a:1,e:"Gantt charts visualize the schedule — activity bars across a calendar timeline — making status easy to communicate to stakeholders."}
+]}
+};
+
+</script>
+<script id="logic">
+const app = document.getElementById('app');
+const PASS = 75;
+let S = null, tick = null;
+
+function store(k,v){ try{ localStorage.setItem('fmpfinal_'+k, JSON.stringify(v)); }catch(e){} }
+function load(k){ try{ const v = localStorage.getItem('fmpfinal_'+k); return v?JSON.parse(v):null; }catch(e){ return null; } }
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function shuffle(a){ const x=[...a]; for(let i=x.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [x[i],x[j]]=[x[j],x[i]]; } return x; }
+function fmt(s){ const m=Math.floor(s/60), r=s%60; return String(m).padStart(2,'0')+':'+String(r).padStart(2,'0'); }
+
+function buildMock(){
+  let q=[];
+  for(const k of ['fin','om','ls','pm']){
+    shuffle(BANK[k].q).slice(0,10).forEach(x=>q.push({...x, m:BANK[k].name}));
+  }
+  return shuffle(q);
+}
+
+function home(){
+  clearInterval(tick); S=null;
+  const mods = Object.entries(BANK).map(([id,m])=>{
+    const b = load('best_'+id);
+    return `<div class="card" style="--c:${m.color}">
+      <div class="tag">Final Assessment</div>
+      <h2>${m.name}</h2>
+      <p>Simulated final exam for the ${m.name} module. Answer all questions, then submit for scoring and a full explanation review.</p>
+      <div class="meta"><span><b>${m.q.length}</b> questions</span><span><b>${m.mins}</b> min</span><span>pass <b>${PASS}%</b></span></div>
+      <div class="best">${b!==null?`BEST SCORE <b>${b}%</b>`:'NOT ATTEMPTED YET'}</div>
+      <button class="launch" onclick="start('${id}')">Start exam</button>
+    </div>`;
+  }).join('');
+  const bm = load('best_mock');
+  app.innerHTML = `
+    <div class="top">
+      <div class="brand"><div class="crest">FMP</div>
+        <div><h1>FMP Final Exams — Live Practice</h1><small>IFMA Facility Management Professional · Command Center</small></div>
+      </div>
+      <div class="sysline">MODE <b>EXAM SIMULATION</b><br>4 MODULES · 100 QUESTIONS · OFFLINE</div>
+    </div>
+    <div class="grid">${mods}
+      <div class="card" style="--c:var(--mock)">
+        <div class="tag">Full Mock</div>
+        <h2>Cross-Module Mock Exam</h2>
+        <p>40 questions drawn randomly across all four modules — 10 from each. The closest simulation of exam-day breadth.</p>
+        <div class="meta"><span><b>40</b> questions</span><span><b>75</b> min</span><span>pass <b>${PASS}%</b></span></div>
+        <div class="best">${bm!==null?`BEST SCORE <b>${bm}%</b>`:'NOT ATTEMPTED YET'}</div>
+        <button class="launch" onclick="start('mock')">Start mock</button>
+      </div>
+    </div>
+    <div class="rules">
+      <h3>Exam Protocol</h3>
+      <p>Questions are shuffled on every attempt. You can move freely, flag questions for review, and change answers until you submit. The timer auto-submits at zero. Explanations are shown only after submission — exactly like the real online final assessment. Target: ${PASS}% or higher per module.</p>
+    </div>`;
+  window.scrollTo(0,0);
+}
+
+function start(id){
+  let qs, name, color, mins;
+  if(id==='mock'){ qs=buildMock(); name='Cross-Module Mock Exam'; color='var(--mock)'; mins=75; }
+  else { const m=BANK[id]; qs=shuffle(m.q).map(x=>({...x, m:m.name})); name=m.name+' — Final Exam'; color=m.color; mins=m.mins; }
+  S = { id, name, color, qs, i:0, ans:Array(qs.length).fill(null), flag:Array(qs.length).fill(false), left:mins*60, done:false };
+  clearInterval(tick);
+  tick = setInterval(()=>{
+    if(!S||S.done) return;
+    S.left--;
+    const t=document.getElementById('timer');
+    if(t){ t.textContent=fmt(S.left); t.classList.toggle('low', S.left<=300); }
+    if(S.left<=0) submit(true);
+  },1000);
+  exam();
+}
+
+function exam(){
+  const q=S.qs[S.i];
+  const cells=S.qs.map((_,n)=>`<button class="cell ${S.ans[n]!==null?'done':''} ${S.flag[n]?'flag':''} ${n===S.i?'cur':''}" style="--c:${S.color}" onclick="go(${n})">${n+1}</button>`).join('');
+  const opts=q.o.map((o,n)=>`<button class="opt ${S.ans[S.i]===n?'sel':''}" style="--c:${S.color}" onclick="pick(${n})"><span class="key">${'ABCD'[n]}</span><span>${esc(o)}</span></button>`).join('');
+  const answered=S.ans.filter(a=>a!==null).length;
+  app.innerHTML = `
+    <div class="exambar">
+      <div class="mod" style="--c:${S.color}">${S.name}</div>
+      <div class="qcount">${answered}/${S.qs.length} answered</div>
+      <div class="timer ${S.left<=300?'low':''}" id="timer">${fmt(S.left)}</div>
+    </div>
+    <div class="layout">
+      <div>
+        <div class="qpanel">
+          <div class="qtopic" style="--c:${S.color}">Q${S.i+1} · ${esc(q.t)}${S.id==='mock'?' · '+esc(q.m):''}</div>
+          <div class="qtext">${esc(q.q)}</div>
+          ${opts}
+          <div class="navrow">
+            <button class="btn ghost" onclick="go(${S.i-1})" ${S.i===0?'disabled':''}>← Previous</button>
+            <button class="btn ghost" onclick="go(${S.i+1})" ${S.i===S.qs.length-1?'disabled':''}>Next →</button>
+            <button class="btn flagb ${S.flag[S.i]?'on':''}" onclick="flag()">${S.flag[S.i]?'⚑ Flagged':'⚐ Flag'}</button>
+            <button class="btn submit" onclick="submit(false)">Submit exam</button>
+          </div>
+        </div>
+      </div>
+      <div class="navbox">
+        <h4>Navigator</h4>
+        <div class="navgrid">${cells}</div>
+        <div class="legend">
+          <div><i style="background:color-mix(in srgb,${S.color} 40%,var(--panel2))"></i>Answered</div>
+          <div><i style="background:var(--panel2);border:1px solid var(--warn)"></i>Flagged</div>
+          <div><i style="background:var(--panel2)"></i>Unanswered</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function pick(n){ S.ans[S.i]=n; if(S.i<S.qs.length-1){ S.i++; } exam(); }
+function go(n){ if(n>=0&&n<S.qs.length){ S.i=n; exam(); window.scrollTo(0,0);} }
+function flag(){ S.flag[S.i]=!S.flag[S.i]; exam(); }
+
+function submit(auto){
+  const un=S.ans.filter(a=>a===null).length;
+  if(!auto && un>0 && !confirm(un+' question(s) are unanswered. Submit anyway?')) return;
+  if(!auto && un===0 && !confirm('Submit exam for scoring?')) return;
+  S.done=true; clearInterval(tick);
+  const correct=S.qs.reduce((s,q,n)=>s+(S.ans[n]===q.a?1:0),0);
+  const pct=Math.round(correct/S.qs.length*100);
+  const key='best_'+(S.id==='mock'?'mock':S.id);
+  const prev=load(key); if(prev===null||pct>prev) store(key,pct);
+  S.score={correct,pct};
+  results('all');
+}
+
+function results(filter){
+  const {correct,pct}=S.score;
+  const pass=pct>=PASS;
+  const topics={};
+  S.qs.forEach((q,n)=>{ const k=S.id==='mock'?q.m:q.t; topics[k]=topics[k]||{c:0,t:0}; topics[k].t++; if(S.ans[n]===q.a)topics[k].c++; });
+  const tg=Object.entries(topics).map(([k,v])=>`<div class="tp"><div class="tn">${esc(k)}</div><div class="bar"><i style="--c:${S.color};width:${Math.round(v.c/v.t*100)}%"></i></div><div class="ts">${v.c}/${v.t} correct · ${Math.round(v.c/v.t*100)}%</div></div>`).join('');
+  const rows=S.qs.map((q,n)=>{
+    const right=S.ans[n]===q.a;
+    if(filter==='wrong'&&right) return '';
+    return `<div class="rv ${right?'right':'wrong'}">
+      <div class="qtopic" style="--c:${S.color}">Q${n+1} · ${esc(q.t)}</div>
+      <div class="qt">${esc(q.q)}</div>
+      <div class="ans ${right?'ok':'bad'}"><b>YOUR ANSWER:</b> ${S.ans[n]===null?'— not answered':esc(q.o[S.ans[n]])} ${right?'✓':'✗'}</div>
+      ${right?'':`<div class="ans ok"><b>CORRECT:</b> ${esc(q.o[q.a])}</div>`}
+      <div class="expl">${esc(q.e)}</div>
+    </div>`;
+  }).join('');
+  const wrongN=S.qs.length-correct;
+  app.innerHTML = `
+    <div class="scorehero" style="--c:${S.color}">
+      <div class="verdict ${pass?'pass':'fail'}">${pass?'■ PASS — TARGET MET':'■ BELOW TARGET — RETRY RECOMMENDED'}</div>
+      <div class="bignum" style="color:${pass?'var(--ok)':'var(--bad)'}">${pct}%</div>
+      <div class="subnum">${correct}/${S.qs.length} correct · ${S.name} · pass mark ${PASS}%</div>
+    </div>
+    <div class="topicgrid">${tg}</div>
+    <div class="filterrow">
+      <button class="chip ${filter==='all'?'on':''}" style="--c:${S.color}" onclick="results('all')">All questions</button>
+      <button class="chip ${filter==='wrong'?'on':''}" style="--c:${S.color}" onclick="results('wrong')">Wrong only (${wrongN})</button>
+      <button class="chip" style="--c:${S.color}" onclick="start('${S.id}')">↻ Retake (reshuffled)</button>
+      <button class="chip" onclick="home()">◄ Command center</button>
+    </div>
+    ${rows||'<div class="rules"><p>Nothing to review here — every question was answered correctly. Outstanding.</p></div>'}`;
+  window.scrollTo(0,0);
+}
+
+home();
+
+</script>
+</body>
+</html>
